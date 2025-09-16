@@ -46,7 +46,7 @@ authRouter.get("/profile", verifyToken, async (req, res) => {
   try {
     const user = await authModel.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ msg: "User not found" });
-    console.log(user);
+    // console.log(user);
 
     res.json({ user, session: req.user });
   } catch (error) {
