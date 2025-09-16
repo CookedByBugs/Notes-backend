@@ -24,11 +24,24 @@ notesRouter.post("/create", async (req, res) => {
 notesRouter.get("/get", verifyToken, async (req, res) => {
   try {
     const notes = await Note.find({ createdBy: req.user.id });
-    console.log(notes);
+    // console.log(notes);
     res.json(notes);
   } catch (error) {
     console.log(error);
     res.status(500).json({ msg: "something went wrong" });
+  }
+});
+
+notesRouter.get("/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(id)
+    const singleNote = await Note.findById(id);
+    if (!singleNote) return res.json({ msg: "Note not found" });
+    console.log(singleNote);
+    res.json(singleNote);
+  } catch (error) {
+    res.status(500).json({ msg: "Internal server error", error });
   }
 });
 
