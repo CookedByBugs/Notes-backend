@@ -17,7 +17,8 @@ notesRouter.post("/create", async (req, res) => {
     });
     res.status(200).json({ msg: "Note created successfully", note });
   } catch (error) {
-    res.status(500).json({ msg: "Internal server error" });
+    res.status(500).json({ msg: "Internal server error", error });
+    console.log(error);
   }
 });
 
@@ -35,13 +36,41 @@ notesRouter.get("/get", verifyToken, async (req, res) => {
 notesRouter.get("/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id)
-    const singleNote = await Note.findById(id);
+    console.log(id);
+    const singleNote = await Note.findById(id).populate(
+      "allowedUsers",
+      "email -_id"
+    );
     if (!singleNote) return res.json({ msg: "Note not found" });
     console.log(singleNote);
     res.json(singleNote);
   } catch (error) {
     res.status(500).json({ msg: "Internal server error", error });
+  }
+});
+
+notesRouter.put("/:id", verifyToken, async (req, res) => {
+  try {
+    const { title, allowedUsers, content, access } = req.body;
+    console.log(
+      `title: ${title}, allowedUsers: ${allowedUsers}, content: ${content}, access: ${access}`
+    );
+    const users = await User.find({ email: { $in: allowedUsers } }, "_id");
+
+    const updatedNote = await Note.findByIdAndUpdate(
+      req.params.id,
+      {
+        title,
+        access,
+        allowedUsers: users.map((u) => u._id),
+        content,
+      },
+      { new: true }
+    ).populate("allowedUsers", "email");
+    res.json(updatedNote);
+  } catch (error) {
+    res.status(500).json({ msg: "Internal server error" });
+    console.log(error);
   }
 });
 
