@@ -1,5 +1,6 @@
 const express = require("express");
 const notesRouter = express.Router();
+const mongoose = require("mongoose");
 const Note = require("../../models/Notes/notes.model");
 const User = require("../../models/Auth/auth.model");
 const verifyToken = require("../../middlewares/token/verifyToken");
@@ -33,7 +34,38 @@ notesRouter.get("/get", verifyToken, async (req, res) => {
   }
 });
 
-notesRouter.get("/:id", verifyToken, async (req, res) => {
+notesRouter.get("/get/private", async (req, res) => {
+  const userId = req.query.userId;
+  const isValidObjectId = mongoose.Types.ObjectId.isValid(userId);
+  if (!isValidObjectId) {
+    return res.status(400).json({ msg: "Invalid userId" });
+  }
+  try {
+    const notes = await Note.find({
+      access: "Private",
+      allowedUsers: {
+        $in: [new mongoose.Types.ObjectId(userId)],
+      },
+    });
+    console.log(notes);
+    res.json(notes);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Something went wrong", error });
+  }
+});
+
+notesRouter.get("/get/public", async (req, res) => {
+  try {
+    const notes = await Note.find({ access: "Public" });
+    console.log(notes);
+    res.json(notes);
+  } catch (error) {
+    res.status(500).json({ msg: "Something went wrong", error });
+  }
+});
+
+notesRouter.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     console.log(id);
@@ -45,7 +77,8 @@ notesRouter.get("/:id", verifyToken, async (req, res) => {
     console.log(singleNote);
     res.json(singleNote);
   } catch (error) {
-    res.status(500).json({ msg: "Internal server error", error });
+    console.log(error);
+    // res.status(400).json({ msg: "Internal server error", error });
   }
 });
 
