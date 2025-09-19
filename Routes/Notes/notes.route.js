@@ -25,7 +25,13 @@ notesRouter.post("/create", async (req, res) => {
 
 notesRouter.get("/get", verifyToken, async (req, res) => {
   try {
-    const notes = await Note.find({ createdBy: req.user.id });
+    const notes = await Note.find({
+      $or: [
+        { createdBy: req.user.id },
+        { allowedUsers: { $in: [req.user.id] } },
+        // { allowedUsers: new mongoose.Types.ObjectId(req.user.id) },
+      ],
+    });
     // console.log(notes);
     res.json(notes);
   } catch (error) {
@@ -36,13 +42,23 @@ notesRouter.get("/get", verifyToken, async (req, res) => {
 
 notesRouter.get("/get/private", async (req, res) => {
   const userId = req.query.userId;
+  try {
+    const notes = await Note.find({ createdBy: userId });
+    res.send(notes);
+  } catch (error) {
+    res.status(500).json({ msg: "Internal Server Error" });
+  }
+});
+
+notesRouter.get("/get/shared", async (req, res) => {
+  const userId = req.query.userId;
   const isValidObjectId = mongoose.Types.ObjectId.isValid(userId);
   if (!isValidObjectId) {
     return res.status(400).json({ msg: "Invalid userId" });
   }
   try {
     const notes = await Note.find({
-      access: "Private",
+      // access: "Private",
       allowedUsers: {
         $in: [new mongoose.Types.ObjectId(userId)],
       },
