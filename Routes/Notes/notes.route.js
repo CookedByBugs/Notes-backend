@@ -23,6 +23,16 @@ notesRouter.post("/create", async (req, res) => {
   }
 });
 
+notesRouter.delete("/delete/:id", verifyToken, async (req, res) => {
+  try {
+    await Note.deleteOne({ _id: req.params.id });
+    res.json({ msg: "Deleted" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Somethig went wrong", error });
+  }
+});
+
 notesRouter.get("/get", verifyToken, async (req, res) => {
   try {
     const notes = await Note.find({
@@ -31,7 +41,17 @@ notesRouter.get("/get", verifyToken, async (req, res) => {
         { allowedUsers: { $in: [req.user.id] } },
         // { allowedUsers: new mongoose.Types.ObjectId(req.user.id) },
       ],
-    });
+    }).sort({ createdAt: -1 });
+    // console.log(notes);
+    res.json(notes);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "something went wrong" });
+  }
+});
+notesRouter.get("/get/notes", verifyToken, async (req, res) => {
+  try {
+    const notes = await Note.find({ createdBy: req.user.id });
     // console.log(notes);
     res.json(notes);
   } catch (error) {
@@ -62,7 +82,7 @@ notesRouter.get("/get/shared", async (req, res) => {
       allowedUsers: {
         $in: [new mongoose.Types.ObjectId(userId)],
       },
-    });
+    }).sort({ createdAt: -1 });
     console.log(notes);
     res.json(notes);
   } catch (error) {
