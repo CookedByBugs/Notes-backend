@@ -59,14 +59,40 @@ notesRouter.get("/get/notes", verifyToken, async (req, res) => {
     res.status(500).json({ msg: "something went wrong" });
   }
 });
+notesRouter.get("/get/private", verifyToken, async (req, res) => {
+  try {
+    const notes = await Note.find({
+      createdBy: req.user.id,
+      access: "Private",
+    });
+    // console.log(notes);
+    res.json(notes);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "something went wrong" });
+  }
+});
 
-notesRouter.get("/get/private", async (req, res) => {
+notesRouter.get("/get/my-notes", async (req, res) => {
   const userId = req.query.userId;
   try {
     const notes = await Note.find({ createdBy: userId });
     res.send(notes);
   } catch (error) {
     res.status(500).json({ msg: "Internal Server Error" });
+  }
+});
+
+notesRouter.get("/get/recent", verifyToken, async (req, res) => {
+  try {
+    const notes = await Note.find({ createdBy: req.user.id })
+      .sort({
+        createdAt: -1,
+      })
+      .limit(3);
+    res.send(notes);
+  } catch (error) {
+    res.status(500).json({ msg: "ERROR" });
   }
 });
 
@@ -117,6 +143,24 @@ notesRouter.get("/:id", async (req, res) => {
     // res.status(400).json({ msg: "Internal server error", error });
   }
 });
+
+// notesRouter.get("/search", verifyToken, async (req, res) => {
+//   const { query } = req.query;
+//   if (!query) return console.log("No query found");
+//   try {
+//     const notes = await Note.find({
+//       $or: [
+//         { title: { $regex: query, $options: "i" } },
+//         { content: { $regex: query, $options: "i" } },
+//       ],
+//     })
+//       .sort({ createdAt: -1 })
+//       .limit(20);
+//     res.send(notes);
+//   } catch (error) {
+//     res.status(500).json({ msg: "Something went wrong", error });
+//   }
+// });
 
 notesRouter.put("/:id", verifyToken, async (req, res) => {
   try {
